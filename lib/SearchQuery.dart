@@ -6,7 +6,6 @@ import 'ResultTile.dart';
 import 'dart:io';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
-final String apiKey = "AIzaSyCbd6L1v0ODBF_B-wjGDN5z_pjJXIja3EY";
 
 class SearchResults extends StatelessWidget {
   final String query;
