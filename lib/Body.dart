@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'SearchQuery.dart';
+import 'ResultTile.dart';
 
 class Body extends StatefulWidget {
-  final String? searchString;
   final Function metadataCallback;
+  List<Map<String, dynamic>>? searchResults;
+  List<Map<String, dynamic>>? playlist;
 
-  const Body({required this.metadataCallback, this.searchString});
+  Body(
+      {required this.searchResults,
+      required this.playlist,
+      required this.metadataCallback});
 
   @override
   _BodyState createState() => _BodyState();
@@ -13,13 +17,16 @@ class Body extends StatefulWidget {
 
 class _BodyState extends State<Body>  {
   Widget _buildSearchQuery() {
-    if (widget.searchString != null) {
+    if (widget.searchResults != null) {
       return Padding(
         padding: const EdgeInsets.all(10.0),
-        child: SearchResults(query: widget.searchString!, metadataCallback: widget.metadataCallback),
+        child: ResultTile(
+          videoItems: widget.searchResults,
+          metadataCallback: widget.metadataCallback,
+        ),
       );
     } else {
-      return Center(
+      return const Center(
           child: Text(
         'Search for a video',
         style: TextStyle(color: Colors.white),

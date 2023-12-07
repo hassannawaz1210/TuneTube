@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'ButtomPlayer.dart';
-import 'AppBar.dart';
+import 'BottomPlayer.dart';
+import 'MyAppBar.dart';
 import 'Body.dart';
 import 'Drawer.dart';
+import 'SearchResults.dart';
+import 'Playlist.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,55 +14,60 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String? searchString = null;
+  List<Map<String, dynamic>>? searchResults = null;
+  List<Map<String, dynamic>>? playlist = null;
   Map<String, dynamic>? metadata = null;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>(); //for Drawer
 
   @override
   Widget build(BuildContext context) {
     print("this is homeepage");
     return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity! > 0) {
-          _scaffoldKey.currentState?.openDrawer();
-        }
-      },
-      child: Scaffold(
-          key: _scaffoldKey,
-          drawer: MyDrawer(),
-          body: SafeArea(
-              child: Column(
-            children: [
-              // ---------------- AppBar ---------------
-              MyAppBar(
-                setSearchString: (str) {
-                  setState(() {
-                    searchString = str;
-                  });
-                },
-                scaffoldKey: _scaffoldKey,
-              ),
+        onHorizontalDragEnd: (details) {
+           if (details.primaryVelocity! > 0) {
+            _scaffoldKey.currentState?.openDrawer(); // Open left drawer
+          } else if (details.primaryVelocity! < 0) {
+            _scaffoldKey.currentState?.openEndDrawer(); // Open right drawer
+          }
+        },
+        child: Scaffold(
+            key: _scaffoldKey,
+            drawer: MyDrawer(),
+            endDrawer: PlaylistDrawer(
+              playlist: playlist,
+            ),
+            body: SafeArea(
+                child: Column(
+              children: [
+                // ---------------- AppBar ---------------
+                MyAppBar(
+                  searchResultsCallBack: (str) {
+                    setState(() {
+                      searchResults = str;
+                    });
+                  },
+                  scaffoldKey: _scaffoldKey,
+                ),
 
-              // --------------- Search Results ---------------
-              
-                
-              //--------------- body ---------------
-              Expanded(
-                child: Body(
-                    searchString: searchString,
-                    metadataCallback: (data) {
-                      setState(() {
-                        metadata = data;
-                      });
-                    }),
-              ),
-            ],
-          )),
+                //--------------- body ---------------
+                Expanded(
+                  child: Body(
+                      searchResults: searchResults,
+                      playlist: playlist,
+                      metadataCallback: (data) {
+                        setState(() {
+                          metadata = data;
+                        });
+                      }),
+                ),
+              ],
+            )),
 
             //--------------- music player ---------------
-          bottomNavigationBar: BottomPlayer(
-            metadata: metadata,
-          ))
-    );
+            bottomNavigationBar: BottomPlayer(
+              searchResults: searchResults,
+              metadata: metadata,
+            )));
   }
 }

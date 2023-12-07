@@ -128,7 +128,7 @@ class _MainPlayerState extends State<MainPlayer> {
                             placeholder: (context, url) =>
                                 CircularProgressIndicator(),
                             errorWidget: (context, url, error) =>
-                                Icon(Icons.error),
+                                Icon(Icons.error, color: Colors.white),
                           ),
                         ),
                       ),

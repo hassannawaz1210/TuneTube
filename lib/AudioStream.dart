@@ -1,15 +1,21 @@
 import 'dart:async';
-
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 Future<String> getAudioUrl(String url) async {
   final yt = YoutubeExplode();
-  var manifest = await yt.videos.streamsClient.getManifest(url);
-  var streamInfo = manifest.audioOnly.sortByBitrate().last;
-  var audioUrl = streamInfo.url;
-  yt.close();
+  var audioUrl = '';
 
-  return audioUrl.toString();
+  try {
+    var manifest = await yt.videos.streamsClient.getManifest(url);
+    var streamInfo = manifest.audioOnly.withHighestBitrate();
+    audioUrl = streamInfo.url.toString();
+  } catch (e) {
+    print('Failed to get audio URL: $e');
+  } finally {
+    yt.close();
+  }
+
+  return audioUrl;
 }
 
 
