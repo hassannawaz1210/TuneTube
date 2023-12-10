@@ -92,7 +92,6 @@ class _MainPlayerState extends State<MainPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    print("Im music player");
     return Material(
             child: Container(
               color: Colors.black,

@@ -23,6 +23,7 @@ class _MyAppBarState extends State<MyAppBar> {
   bool _isExpanded = false;
   bool _isLoading = false;
   final _searchController = TextEditingController();
+  FocusNode _searchFocusNode = FocusNode();
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +83,7 @@ class _MyAppBarState extends State<MyAppBar> {
                             padding:
                                 const EdgeInsets.only(left: 15.0, right: 15.0),
                             child: TextFormField(
+                              focusNode: _searchFocusNode,
                               onFieldSubmitted: (currentTextInForm) async {
                                 setState(() {
                                   _isLoading = true;
@@ -135,6 +137,9 @@ class _MyAppBarState extends State<MyAppBar> {
                 padding: const EdgeInsets.only(right: 15.0),
                 child: GestureDetector(
                   onTap: () async {
+                    //set focus to search field
+                    _searchFocusNode.requestFocus();
+
                     // ----------- getting the search results -------------
                     if (_isExpanded && _searchController.text.isNotEmpty) {
                       setState(() {
@@ -154,7 +159,7 @@ class _MyAppBarState extends State<MyAppBar> {
                       _isExpanded = !_isExpanded;
                     });
                   },
-                  child: Icon(
+                  child: const Icon(
                     Icons.search,
                     color: Colors.white,
                     size: 30,

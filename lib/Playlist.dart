@@ -15,9 +15,7 @@ class PlaylistDrawer extends StatefulWidget {
 
 class _PlaylistDrawerState extends State<PlaylistDrawer> {
   @override
-
   Future<void> _readPlaylist() async {
-    print("READING PLAYLIST");
     try {
       if (Platform.isAndroid) {
         // For Android, read the file from the application documents directory
@@ -46,13 +44,25 @@ class _PlaylistDrawerState extends State<PlaylistDrawer> {
     }
   }
 
+  void refreshWidget() {
+    if(mounted)
+    {
+      setState(() {
+        print("refreshing playlist");
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: _readPlaylist(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Drawer(child: Center(child: CircularProgressIndicator())); // Show loading indicator while waiting
+          return const Drawer(
+              child: Center(
+                  child:
+                      CircularProgressIndicator())); // Show loading indicator while waiting
         } else {
           return Padding(
             padding: const EdgeInsets.all(5.0),
@@ -62,40 +72,62 @@ class _PlaylistDrawerState extends State<PlaylistDrawer> {
                   borderRadius: BorderRadius.circular(10.0),
                 ),
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  child: Column(
-                    children: [
-                      //----------- Header ------------
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10.0),
-                          border: Border.all(
-                              color: Colors.white, width: 2.0), 
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    child: Column(
+                      children: [
+                        //----------- Header ------------
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10.0),
+                            border: Border.all(color: Colors.white, width: 2.0),
                           ),
-                        child: ListTile(
-                          title: const Text(
-                            'Playlist',
-                            style: TextStyle(color: Colors.white, fontSize: 20.0, fontWeight: FontWeight.bold),
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.play_arrow),
-                            color: Colors.white,
-                            onPressed: () async {},
+                          child: ListTile(
+                            title: const Text(
+                              'Playlist',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20.0,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.play_arrow),
+                              color: Colors.white,
+                              onPressed: () async {},
+                            ),
                           ),
                         ),
-                      ),
 
-                      //-------- Songs list starts here -------------
-                      ResultTile(
-                        videoItems: widget.playlist,
-                        metadataCallback: (data) {},
-                      ),
-                    ],
-                  )
-                ),
+                        // Check if playlist is empty
+                        widget.playlist?.isEmpty ?? true
+                            ? const Expanded(
+                                child: Center(
+                                  child: Text(
+                                    'Playlist is empty',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            :
+
+                            //-------- Songs list starts here -------------
+                            Expanded(
+                              child: ListView(
+                                children: [
+                                  ResultTile(
+                                    videoItems: widget.playlist,
+                                    currentVideoCallback: (data) {},
+                                    parentWidget: 'Playlist',
+                                  )
+                                ]
+                              )
+                            ),
+                      ],
+                    )),
               ),
             ),
           );
@@ -104,4 +136,3 @@ class _PlaylistDrawerState extends State<PlaylistDrawer> {
     );
   }
 }
-

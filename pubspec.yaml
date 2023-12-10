@@ -43,6 +43,11 @@ dependencies:
   loading_animation_widget: ^1.2.0+4
   audio_service: ^0.18.12
   path_provider: ^2.1.1
+  just_audio: ^0.9.36
+  audio_video_progress_bar: ^2.0.1
+  just_audio_background: ^0.0.1-beta.11
+  rxdart: ^0.27.7
+  just_audio_windows: ^0.2.0
 
 dev_dependencies:
   flutter_test:

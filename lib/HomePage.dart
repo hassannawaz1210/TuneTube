@@ -3,7 +3,6 @@ import 'BottomPlayer.dart';
 import 'MyAppBar.dart';
 import 'Body.dart';
 import 'Drawer.dart';
-import 'SearchResults.dart';
 import 'Playlist.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,7 +15,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>>? searchResults = null;
   List<Map<String, dynamic>>? playlist = null;
-  Map<String, dynamic>? metadata = null;
+  Map<String, dynamic>? currentVideo = null;
   final GlobalKey<ScaffoldState> _scaffoldKey =
       GlobalKey<ScaffoldState>(); //for Drawer
 
@@ -25,7 +24,7 @@ class _HomePageState extends State<HomePage> {
     print("this is homeepage");
     return GestureDetector(
         onHorizontalDragEnd: (details) {
-           if (details.primaryVelocity! > 0) {
+          if (details.primaryVelocity! > 0) {
             _scaffoldKey.currentState?.openDrawer(); // Open left drawer
           } else if (details.primaryVelocity! < 0) {
             _scaffoldKey.currentState?.openEndDrawer(); // Open right drawer
@@ -54,10 +53,9 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: Body(
                       searchResults: searchResults,
-                      playlist: playlist,
-                      metadataCallback: (data) {
+                      currentVideoCallback: (data) {
                         setState(() {
-                          metadata = data;
+                          currentVideo = data;
                         });
                       }),
                 ),
@@ -67,7 +65,7 @@ class _HomePageState extends State<HomePage> {
             //--------------- music player ---------------
             bottomNavigationBar: BottomPlayer(
               searchResults: searchResults,
-              metadata: metadata,
+              currentVideo: currentVideo,
             )));
   }
 }

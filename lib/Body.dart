@@ -2,27 +2,25 @@ import 'package:flutter/material.dart';
 import 'ResultTile.dart';
 
 class Body extends StatefulWidget {
-  final Function metadataCallback;
+  final Function currentVideoCallback;
   List<Map<String, dynamic>>? searchResults;
-  List<Map<String, dynamic>>? playlist;
 
-  Body(
-      {required this.searchResults,
-      required this.playlist,
-      required this.metadataCallback});
+  Body({Key? key, required this.currentVideoCallback, this.searchResults})
+      : super(key: key);
 
   @override
   _BodyState createState() => _BodyState();
 }
 
-class _BodyState extends State<Body>  {
-  Widget _buildSearchQuery() {
+class _BodyState extends State<Body> {
+  Widget _displayResults() {
     if (widget.searchResults != null) {
       return Padding(
         padding: const EdgeInsets.all(10.0),
         child: ResultTile(
           videoItems: widget.searchResults,
-          metadataCallback: widget.metadataCallback,
+          currentVideoCallback: widget.currentVideoCallback,
+          parentWidget: 'Body',
         ),
       );
     } else {
@@ -44,7 +42,7 @@ class _BodyState extends State<Body>  {
           color: Colors.black,
           borderRadius: BorderRadius.circular(10.0),
         ),
-        child: _buildSearchQuery(),
+        child: _displayResults(),
       ),
     );
   }
