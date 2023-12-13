@@ -1,10 +1,17 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:tunetube/AudioStream.dart';
 import 'package:tunetube/MainPlayer2.dart';
+import 'package:tunetube/PlaylistStateManagement.dart';
 
 class BottomPlayer extends StatefulWidget {
-  final Map<String, dynamic>? currentVideo;
+  Map<String, dynamic>? currentVideo;
   List<Map<String, dynamic>>? searchResults;
 
   BottomPlayer({Key? key, this.currentVideo, this.searchResults})
@@ -16,11 +23,14 @@ class BottomPlayer extends StatefulWidget {
 
 class _BottomPlayerState extends State<BottomPlayer> {
   late AudioPlayer _audioPlayer;
+  late List<Map<String, dynamic>> _playlist;
 
   @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
+    _playlist = [];
+    _readPlaylist();
   }
 
   @override
@@ -29,20 +39,114 @@ class _BottomPlayerState extends State<BottomPlayer> {
     super.dispose();
   }
 
+  Future<void> _readPlaylist() async {
+    try {
+      if (Platform.isAndroid) {
+        // For Android, read the file from the application documents directory
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/playlist.txt');
+        await _readFile(file);
+      } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+        // For desktop, read the file from the project directory
+        final file = File('lib/playlist.txt');
+        await _readFile(file);
+      }
+    } catch (e) {
+      print('Failed to read playlist: $e');
+    }
+  }
+
+  Future<void> _readFile(File file) async {
+    if (await file.exists()) {
+      final fileContent = await file.readAsString();
+      final lines = LineSplitter.split(fileContent);
+      _playlist.clear();
+      _playlist = [];
+      _playlist = lines
+          .map((line) => jsonDecode(line))
+          .cast<Map<String, dynamic>>()
+          .toList();
+      print("Playlist read.");
+    }
+  }
+
+  void _setPlaylistasSource() async {
+    List<AudioSource> audioSources = [];
+    int i = 0;
+    List<Map<String, dynamic>> playlistCopy = List.from(_playlist);
+    for (var item in playlistCopy) {
+      AudioSource source = AudioSource.uri(
+        Uri.parse(item['audioUrl']),
+        tag: MediaItem(
+          id: (i++).toString(),
+          title: item['title'],
+          artist: item['author'],
+          artUri: Uri.parse(item['thumbnails']),
+        ),
+      );
+      audioSources.add(source);
+    }
+
+    await _audioPlayer.setAudioSource(ConcatenatingAudioSource(children: []));
+    await _audioPlayer.setAudioSource(
+        ConcatenatingAudioSource(children: audioSources),
+        initialIndex: 0,
+        initialPosition: Duration.zero,
+        preload: true);
+
+    //_audioPlayer.setLoopMode(LoopMode.all);
+  }
+
+  void _updateCurrentVideo() {
+    // Get the current index from the audio source
+    final index = _audioPlayer.currentIndex;
+
+    // Check if the index is not null and within the range of the playlist
+    if (index != null && index >= 0 && index < _playlist.length) {
+      // Get the item at the current index
+      var item = _playlist[index];
+
+      // Update the values of currentVideo
+      widget.currentVideo = {
+        'title': item['title'] ?? 'default_title',
+        'author': item['author'] ?? 'default_author',
+        'thumbnail': item['thumbnails'] ?? 'default_thumbnail',
+      };
+    }
+  }
+
   @override
   didUpdateWidget(BottomPlayer oldWidget) {
+    print("didUpdateWidgetEDDDDDDDDDDDDD");
     super.didUpdateWidget(oldWidget);
     if (widget.currentVideo != null) {
-      //
       if (widget.currentVideo != oldWidget.currentVideo) {
         _play();
       }
     }
+
+    final value = context.watch<PlaylistStateManagement>();
+    if (value.buttonPressed) {
+      // _audioPlayer.stop();
+      // _readPlaylist();
+      // _setPlaylistasSource();
+      // _updateCurrentVideo();
+      // _audioPlayer.play();
+    }
   }
 
   Future<void> _play() async {
+    //stop current audio if playing
+    if (_audioPlayer.playing) _audioPlayer.stop();
 
-    _audioPlayer.setAudioSource(
+    //stop playlist if playing
+    context.read<PlaylistStateManagement>().setButtonPressed(false);
+
+    //clear playlist
+    await _audioPlayer.setAudioSource(ConcatenatingAudioSource(children: []));
+
+    //set current video as audio source
+    await _audioPlayer.setAudioSource(
       AudioSource.uri(
         Uri.parse(widget.currentVideo!['audioUrl']),
         tag: MediaItem(
@@ -58,6 +162,21 @@ class _BottomPlayerState extends State<BottomPlayer> {
 
   @override
   Widget build(BuildContext context) {
+    final value = context.watch<PlaylistStateManagement>();
+    if (value.buttonPressed) {
+      _readPlaylist();
+      if (_audioPlayer.playing && _playlist.isNotEmpty) {
+        _audioPlayer.stop();
+      }
+      _setPlaylistasSource();
+      _updateCurrentVideo();
+      _audioPlayer.play();
+      print("value CHANGED.");
+    } else {
+      //ISSUE: cant do this because the player will never start playing as the buttonPressed value is initially false
+      // if (_audioPlayer.playing) _audioPlayer.pause();
+    }
+
     //print("im player");
     if (widget.currentVideo == null) {
       return Material(
@@ -66,27 +185,15 @@ class _BottomPlayerState extends State<BottomPlayer> {
               onTap: () {
                 Navigator.push(
                   context,
+                  //------------ MainPlayer ----------------
                   MaterialPageRoute(
                       builder: (context) => MainPlayer(
                             audioPlayer: _audioPlayer,
-                            currentVideo: widget.currentVideo!,
-                          )
-                      // MainPlayer(
-                      //       //send dummy data to
-                      //       metadata: const {
-                      //         'title': 'Unknown',
-                      //         'author': 'Unknown',
-                      //         'thumbnail':
-                      //             'https://i.ytimg.com/vi/5qap5aO4i9A/maxresdefault.jpg',
-                      //         'audioUrl': 'url'
-                      //       },
-                      //       audioPlayer: AudioPlayer(),
-                      //       initialDuration: const Duration(),
-                      //       initialPosition: const Duration(),
-                      //     )
-                      ),
+                          )),
+                  //-------------
                 );
               },
+              // --------------- Bottom Player ----------------
               child: const Padding(
                   padding: EdgeInsets.all(5.0),
                   child: ListTile(
@@ -97,7 +204,9 @@ class _BottomPlayerState extends State<BottomPlayer> {
                         style: TextStyle(color: Colors.white)),
                     subtitle:
                         Text('Unknown', style: TextStyle(color: Colors.white)),
-                    leading: Icon(Icons.music_note, color: Colors.white),
+                    leading: Padding(
+                        padding: EdgeInsets.only(left: 10, top: 8),
+                        child: Icon(Icons.music_note, color: Colors.white)),
                     trailing: Icon(Icons.play_arrow, color: Colors.white),
                     tileColor: Colors.black,
                   ))));
@@ -114,15 +223,7 @@ class _BottomPlayerState extends State<BottomPlayer> {
                     MaterialPageRoute(
                         builder: (context) => MainPlayer(
                               audioPlayer: _audioPlayer,
-                              currentVideo: widget.currentVideo!,
-                            )
-                        // MainPlayer(
-                        //       metadata: widget.metadata as Map<String, dynamic>,
-                        //       audioPlayer: _audioPlayer,
-                        //       initialDuration: _duration,
-                        //       initialPosition: _position,
-                        //     )
-                        ),
+                            )),
                   );
                 },
                 child: ListTile(
@@ -133,6 +234,7 @@ class _BottomPlayerState extends State<BottomPlayer> {
                   leading: Image.network(
                     widget.currentVideo!['thumbnail'],
                     errorBuilder: (context, url, error) => const Padding(
+                        //incase thumbnail is not available, display error icon
                         padding: EdgeInsets.only(left: 10, top: 5),
                         child: Icon(Icons.error, color: Colors.white)),
                   ),
@@ -158,7 +260,11 @@ class _BottomPlayerState extends State<BottomPlayer> {
                           return IconButton(
                             icon: const Icon(Icons.pause_rounded),
                             color: Colors.white,
-                            onPressed: _audioPlayer.pause,
+                            onPressed: () {
+                              if (_audioPlayer.playing) {
+                                _audioPlayer.pause();
+                              }
+                            },
                           );
                         }
                         return IconButton(

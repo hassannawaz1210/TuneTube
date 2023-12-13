@@ -1,5 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:tunetube/MySnackbar.dart';
+import 'package:tunetube/PlaylistHeader.dart';
+import 'package:tunetube/PlaylistStateManagement.dart';
 import 'ResultTile.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -7,7 +11,14 @@ import 'dart:convert';
 
 class PlaylistDrawer extends StatefulWidget {
   List<Map<String, dynamic>>? playlist;
-  PlaylistDrawer({Key? key, this.playlist}) : super(key: key);
+  final Function currentVideoCallback;
+
+  PlaylistDrawer({
+    Key? key,
+    required this.playlist,
+    required this.currentVideoCallback,
+  }) : super(key: key);
+
 
   @override
   _PlaylistDrawerState createState() => _PlaylistDrawerState();
@@ -29,6 +40,18 @@ class _PlaylistDrawerState extends State<PlaylistDrawer> {
       }
     } catch (e) {
       print('Failed to read playlist: $e');
+      //clear playlist file
+      if (Platform.isAndroid) {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/playlist.txt');
+        await file.writeAsString('');
+      } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+        final file = File('lib/playlist.txt');
+        await file.writeAsString('');
+      }
+      //display snackbar
+      ScaffoldMessenger.of(context).showSnackBar(MySnackbar.show(
+          'Playlist was cleared due to an error. Please create a new playlist.'));
     }
   }
 
@@ -44,15 +67,6 @@ class _PlaylistDrawerState extends State<PlaylistDrawer> {
     }
   }
 
-  void refreshWidget() {
-    if(mounted)
-    {
-      setState(() {
-        print("refreshing playlist");
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
@@ -60,9 +74,7 @@ class _PlaylistDrawerState extends State<PlaylistDrawer> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Drawer(
-              child: Center(
-                  child:
-                      CircularProgressIndicator())); // Show loading indicator while waiting
+              child: Center(child: CircularProgressIndicator()));
         } else {
           return Padding(
             padding: const EdgeInsets.all(5.0),
@@ -79,27 +91,8 @@ class _PlaylistDrawerState extends State<PlaylistDrawer> {
                     child: Column(
                       children: [
                         //----------- Header ------------
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10.0),
-                            border: Border.all(color: Colors.white, width: 2.0),
-                          ),
-                          child: ListTile(
-                            title: const Text(
-                              'Playlist',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20.0,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.play_arrow),
-                              color: Colors.white,
-                              onPressed: () async {},
-                            ),
-                          ),
-                        ),
-
+                        const PlaylistHeader(),
+                        //------
                         // Check if playlist is empty
                         widget.playlist?.isEmpty ?? true
                             ? const Expanded(
@@ -113,19 +106,15 @@ class _PlaylistDrawerState extends State<PlaylistDrawer> {
                                 ),
                               )
                             :
-
                             //-------- Songs list starts here -------------
                             Expanded(
-                              child: ListView(
-                                children: [
-                                  ResultTile(
-                                    videoItems: widget.playlist,
-                                    currentVideoCallback: (data) {},
-                                    parentWidget: 'Playlist',
-                                  )
-                                ]
-                              )
-                            ),
+                                child: ListView(children: [
+                                ResultTile(
+                                  videoItems: widget.playlist,
+                                  currentVideoCallback:  widget.currentVideoCallback,
+                                  parentWidget: 'Playlist',
+                                )
+                              ])),
                       ],
                     )),
               ),

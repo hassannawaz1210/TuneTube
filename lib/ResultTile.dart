@@ -107,7 +107,7 @@ class _ResultTileState extends State<ResultTile> {
                     //get audioUrl
                     print(videoUrl);
                     final audioUrl = await getAudioUrl(videoUrl);
-                    Navigator.pop(context);
+                    Navigator.pop(context); //close the loading popup
 
                     Map<String, dynamic> metadata = {
                       'title': videoTitle,

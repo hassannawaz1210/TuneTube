@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:tunetube/AudioStream.dart';
 import 'HomePage.dart';
-
 
 Future<void> main() async {
   await JustAudioBackground.init(
@@ -10,19 +11,19 @@ Future<void> main() async {
     androidNotificationChannelName: 'Audio playback',
     androidNotificationOngoing: true,
   );
+  await Hive.initFlutter();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  
 
   @override
   Widget build(BuildContext context) {
-    return  const MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'TuneTube',
-      home: Scaffold( 
+      home: Scaffold(
         body: HomePage(),
         // MusicPlayer(
         //   musicInfo:  {

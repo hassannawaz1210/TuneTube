@@ -10,10 +10,8 @@ import 'PositionData.dart';
 
 class MainPlayer extends StatefulWidget {
   final AudioPlayer audioPlayer;
-  final currentVideo;
 
-  MainPlayer({Key? key, required this.audioPlayer, required this.currentVideo})
-      : super(key: key);
+  const MainPlayer({Key? key, required this.audioPlayer}) : super(key: key);
 
   @override
   _MainPlayerState createState() => _MainPlayerState();
@@ -35,8 +33,6 @@ class _MainPlayerState extends State<MainPlayer> {
   @override
   void initState() {
     super.initState();
-    if(widget.audioPlayer == null)
-      print("audio player is NULLLLLLLLLLLLLLLLLLLLL");
    // _init();
   }
 
@@ -58,7 +54,14 @@ class _MainPlayerState extends State<MainPlayer> {
           stream: widget.audioPlayer.sequenceStateStream,
           builder: (context, snapshot) {
             final state = snapshot.data;
-            if (state?.sequence.isEmpty ?? true) return const SizedBox();
+            if (state?.sequence.isEmpty ?? true)
+            {
+              return const MediaMetadata(
+                title: 'Unknown',
+                artist: 'Unknown',
+                imageUrl: 'displayLogo',
+              );
+            }
             final metadata = state?.currentSource?.tag as MediaItem?;
             return MediaMetadata(
               title: metadata?.title ?? '',
