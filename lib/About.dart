@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class About extends StatelessWidget {
-  const About({Key? key}) : super(key: key);
+  const About({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +12,7 @@ class About extends StatelessWidget {
           padding: EdgeInsets.only(top: 50),
           height: double.infinity,
           width: double.infinity,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.black,
           ),
           child: Column(children: [

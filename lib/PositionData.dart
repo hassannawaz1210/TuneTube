@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class PositionData {
   final Duration position;
   final Duration bufferedPosition;

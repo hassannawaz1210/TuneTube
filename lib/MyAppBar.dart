@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'SearchResults.dart';
+import 'package:provider/provider.dart';
+import 'MyState.dart';
+import 'API.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
-class MyAppBar extends StatefulWidget implements PreferredSizeWidget {
-  final Function searchResultsCallBack;
-  final GlobalKey<ScaffoldState> scaffoldKey;
 
+class MyAppBar extends StatefulWidget implements PreferredSizeWidget {
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  
   const MyAppBar(
       {Key? key,
-      required this.searchResultsCallBack,
       required this.scaffoldKey})
       : super(key: key);
 
@@ -16,7 +17,7 @@ class MyAppBar extends StatefulWidget implements PreferredSizeWidget {
   _MyAppBarState createState() => _MyAppBarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(200);
+  Size get preferredSize => const Size.fromHeight(150);
 }
 
 class _MyAppBarState extends State<MyAppBar> {
@@ -24,6 +25,19 @@ class _MyAppBarState extends State<MyAppBar> {
   bool _isLoading = false;
   final _searchController = TextEditingController();
   FocusNode _searchFocusNode = FocusNode();
+
+  void onSearchSubmission(String currentTextInForm) async {
+    setState(() {
+      _isLoading = true;
+      _isExpanded = false;
+    });
+    List<Map<String, dynamic>> searchResults =
+        await getSearchResults(currentTextInForm);
+    setState(() {
+      _isLoading = false;
+    });
+    context.read<MyState>().setSearchResult(searchResults);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +64,7 @@ class _MyAppBarState extends State<MyAppBar> {
                       color: Colors.white,
                     ),
                     onTap: () {
-                      widget.scaffoldKey.currentState!.openDrawer();
+                       widget.scaffoldKey.currentState!.openDrawer();
                     },
                   ),
                 ),
@@ -85,16 +99,7 @@ class _MyAppBarState extends State<MyAppBar> {
                             child: TextFormField(
                               focusNode: _searchFocusNode,
                               onFieldSubmitted: (currentTextInForm) async {
-                                setState(() {
-                                  _isLoading = true;
-                                  _isExpanded = false;
-                                });
-                                List<Map<String, dynamic>> searchResults =
-                                    await getSearchResults(currentTextInForm);
-                                setState(() {
-                                  _isLoading = false;
-                                });
-                                widget.searchResultsCallBack(searchResults);
+                                onSearchSubmission(currentTextInForm);
                               },
                               controller: _searchController,
                               decoration: InputDecoration(
@@ -142,17 +147,7 @@ class _MyAppBarState extends State<MyAppBar> {
 
                     // ----------- getting the search results -------------
                     if (_isExpanded && _searchController.text.isNotEmpty) {
-                      setState(() {
-                        _isLoading = true;
-                        _isExpanded = false;
-                      });
-
-                      List<Map<String, dynamic>> searchResults =
-                          await getSearchResults(_searchController.text);
-                      setState(() {
-                        _isLoading = false;
-                      });
-                      widget.searchResultsCallBack(searchResults);
+                      onSearchSubmission(_searchController.text);
                     }
 
                     setState(() {

@@ -1,126 +1,110 @@
-import 'package:flutter/material.dart';
-import 'package:tunetube/AudioStream.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:tunetube/API.dart';
+import 'package:tunetube/Boxes.dart';
+import 'package:tunetube/MyState.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:tunetube/PlaylistFileHandler.dart';
+import 'package:tunetube/models/PlaylistItem.dart';
+import 'MySnackbar.dart';
 
-class ResultTile extends StatefulWidget {
-  final videoItems;
-  final Function currentVideoCallback;
-  String parentWidget;
+class ResultTile extends StatelessWidget {
+  ResultTile({Key? key}) : super(key: key);
 
-  ResultTile({
-    Key? key,
-    required this.videoItems,
-    required this.currentVideoCallback,
-    required this.parentWidget,
-  }) : super(key: key);
-
-  @override
-  _ResultTileState createState() => _ResultTileState();
-}
-
-class _ResultTileState extends State<ResultTile> {
   @override
   Widget build(BuildContext context) {
-    print("this is result tile");
-    IconData trailingIcon = Icons.add;
-    if (widget.parentWidget == 'Playlist') {
-      trailingIcon = Icons.remove;
-    }
-
-    void refreshWidget(int index) {
-      if (mounted) {
-        setState(() {
-          widget.videoItems.removeAt(index);
-        });
-      }
-    }
-
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
+    return Consumer<MyState>(
+      builder: (context, myState, child) {
         return ListView.builder(
-          shrinkWrap: true,
-          itemCount: widget.videoItems?.length ?? 0,
+          itemCount: myState.searchResult!.length,
           itemBuilder: (context, index) {
-            final video = widget.videoItems[index];
-            final videoTitle = video['title'];
-            final videoThumbnailUrl = video['thumbnails'];
-            final videoAuthor = video['author'];
-            final videoUrl = video['videoUrl'];
+            String title = myState.searchResult![index]['title'];
+            String channel = myState.searchResult![index]['author'];
+            String thumbnail = myState.searchResult![index]['thumbnails'];
+            return ListTile(
+              leading: CachedNetworkImage(
+                  imageUrl: thumbnail,
+                  placeholder: (context, url) =>
+                      const CircularProgressIndicator(),
+                  errorWidget: (context, url, error) =>
+                      const Icon(Icons.error, color: Color.fromARGB(184, 255, 255, 255)),
+                  imageBuilder: (context, imageProvider) => Container(
+                        height: 50.0,
+                        width: 50.0,
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                              image: imageProvider, fit: BoxFit.cover),
+                        ),
+                      )),
+              title: Text(title, style: const TextStyle(color: Colors.white)),
+              subtitle: Text(channel,style: const TextStyle(color: Colors.white),),
+              trailing: IconButton(
+                icon: const Icon(Icons.add),
+                color: Colors.white,
+                onPressed: () async {
+                  final selectedItem = myState.searchResult![index];
+                  final playlistItem = PlaylistItem(
+                    title: selectedItem['title'],
+                    author: selectedItem['author'],
+                    videoUrl: selectedItem['videoUrl'],
+                    thumbnails: selectedItem['thumbnails'],
+                    description: selectedItem['description'],
+                    duration: selectedItem['duration'],
+                  );
+                  final playlist = Boxes.getPlaylist();
 
-            return Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  //add addition button
-                  trailing: IconButton(
-                    icon: Icon(trailingIcon, color: Colors.white),
-                    onPressed: () {
-                      if (widget.parentWidget == 'Body') {
-                        PlaylistFileHandler.saveToPlaylist(context, video);
-                      } else if (widget.parentWidget == 'Playlist') {
-                        PlaylistFileHandler.removeFromPlaylist(context, video);
-                        //remove from playlist and refresh widget
-                        refreshWidget(index);
-                      }
-                    },
-                  ),
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(10.0),
-                    child: CachedNetworkImage(
-                      imageUrl: videoThumbnailUrl,
-                      placeholder: (context, url) => const Padding(
-                          padding: EdgeInsets.all(5.0),
-                          child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) => const Padding(
-                          padding: EdgeInsets.only(left: 10, top: 10),
-                          child: Icon(Icons.error, color: Colors.white)),
-                    ),
-                  ),
-                  title: Text(videoTitle,
-                      style: const TextStyle(color: Colors.white)),
-                  subtitle: Text(videoAuthor,
-                      style: const TextStyle(color: Colors.white)),
-                  onTap: () async {
-                    if (videoUrl == null) {
-                      print("videoUrl is null");
-                      return;
-                    }
-                    //create a popup that shows progess circle while audioUrl is being fetched
-                    showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            content: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                LoadingAnimationWidget.threeArchedCircle(
-                                  size: 30,
-                                  color: Colors.black,
-                                ),
-                                Text("Fetching the Audio link..."),
-                              ],
+                  final addedItemKey = playlist.add(playlistItem);
+                  final key = await addedItemKey;
+                  print("added item key: " + key.toString());
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(MySnackbar.show('Added to playlist'));
+                  print("Added to playlist");
+
+                  //Asynchronously Fetch the audioUrl for the playlist item
+                  getAudioUrl(playlistItem.videoUrl).then((audioUrl) {
+                    playlistItem.audioUrl = audioUrl;
+                    playlist.put(key, playlistItem);
+                    print("audio url fetched successfully.");
+                  }).catchError((error) {
+                    ScaffoldMessenger.of(context).showSnackBar(MySnackbar.show(
+                        'Couldnt fetch the audioUrl for the playlist item.'));
+                    print('Error: $error');
+                  });
+                },
+              ),
+              onTap: () async {
+                //create a popup that shows progess circle while audioUrl is being fetched
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        content: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            LoadingAnimationWidget.threeArchedCircle(
+                              size: 30,
+                              color: Colors.black,
                             ),
-                          );
-                        });
+                            Text("Fetching the Audio link..."),
+                          ],
+                        ),
+                      );
+                    });
 
-                    //get audioUrl
-                    print(videoUrl);
-                    final audioUrl = await getAudioUrl(videoUrl);
-                    Navigator.pop(context); //close the loading popup
+                //fetch the audioUrl
+                Map<String, dynamic>? currentlyPlaying =
+                    myState.searchResult![index];
+                String audioUrl =
+                    await getAudioUrl(currentlyPlaying['videoUrl']);
 
-                    Map<String, dynamic> metadata = {
-                      'title': videoTitle,
-                      'author': videoAuthor,
-                      'thumbnail': videoThumbnailUrl,
-                      'videoUrl': videoUrl,
-                      'audioUrl': audioUrl,
-                    };
-                    widget.currentVideoCallback(metadata);
-                  },
+                //close the popup
+                Navigator.pop(context);
 
-                  // Add more widgets to display other video information.
-                ));
+                //set the currentlyPlaying
+                currentlyPlaying['audioUrl'] = audioUrl;
+                myState.setCurrentlyPlaying(currentlyPlaying);
+              },
+            );
           },
         );
       },
