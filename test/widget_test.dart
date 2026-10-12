@@ -63,7 +63,11 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
     expect(find.text('A quiet morning'), findsOneWidget);
-    await tester.tap(find.byTooltip('Save to library'));
+    // Hive writes use real disk I/O outside the widget test's fake clock.
+    await tester.runAsync(() async {
+      await tester.tap(find.byTooltip('Save to library'));
+      await library.flush();
+    });
     await tester.pumpAndSettle();
     expect(library.length, 1);
     expect(library.values.single.audioUrl, isEmpty);
@@ -71,7 +75,11 @@ void main() {
     await tester.tap(find.text('Your library'));
     await tester.pumpAndSettle();
     expect(find.text('A quiet morning'), findsOneWidget);
-    await tester.tap(find.byTooltip('Remove from library'));
+    // Hive writes use real disk I/O outside the widget test's fake clock.
+    await tester.runAsync(() async {
+      await tester.tap(find.byTooltip('Remove from library'));
+      await library.flush();
+    });
     await tester.pumpAndSettle();
     expect(library.isEmpty, isTrue);
     expect(find.text('Make yourself a mixtape'), findsOneWidget);
