@@ -1,45 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:tunetube/models/PlaylistItem.dart';
 import 'HomePage.dart';
-import 'package:hive/hive.dart';
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.ryanheise.myapp.channel.audio',
-    androidNotificationChannelName: 'Audio playback',
+    androidNotificationChannelId: 'com.example.tunetube.audio',
+    androidNotificationChannelName: 'TuneTube playback',
     androidNotificationOngoing: true,
   );
-
   await Hive.initFlutter();
   Hive.registerAdapter(PlaylistItemAdapter());
   await Hive.openBox<PlaylistItem>('playlist');
-
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: Color(0xFF101211),
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
   runApp(const MyApp());
+}
+
+ThemeData tuneTubeTheme() {
+  const mint = Color(0xFFCAEF86);
+  final scheme = ColorScheme.fromSeed(
+    seedColor: mint,
+    brightness: Brightness.dark,
+    surface: const Color(0xFF191C19),
+    primary: mint,
+  );
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: scheme,
+    scaffoldBackgroundColor: const Color(0xFF101211),
+    fontFamily: 'sans-serif',
+    appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF101211)),
+    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: const Color(0xFF202420),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+    ),
+    navigationBarTheme: const NavigationBarThemeData(
+      backgroundColor: Color(0xFF101211),
+      indicatorColor: Color(0xFF303D25),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'TuneTube',
-      home: Scaffold(
-        body: HomePage(),
-        // MusicPlayer(
-        //   musicInfo:  {
-        //     'title': 'title',
-        //     'author': 'author',
-        //     'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJOIH3Nz5CvHBWCv2RPVgSQf_CPKOvvpzyAw&usqp=CAU',
-        //     'audioUrl': 'https://cdn.pixabay.com/download/audio/2023/04/21/audio_8579ca297f.mp3?filename=my-universe-147152.mp3&g-recaptcha-response=03AFcWeA60paXr3twiFtY6MljGEStRzvUmXDHfmejBxtItvRVFU2cYanhH1PaQO2OOLQLCfgI5LvICo7zPm4L0lvueg1yTQpCc6iI1gaabMfyA9xZkKUQ-itEFXOGXpY8g5E49eK2Auz8jmlI4ucCSnXpv8dHQ2_C5awUQtV3yKNR9uv6HN4jdUC2wVJIvf04sUu_EBxFQas7IS8dFxu_1UXj71H_aqGiitmI2urx-_uSjdEom1CmSYma02liNVLqcUBCrc4-Kjehe5-MiVa5Gbtt8fXku82H-B2Sx65iJ2zOBKSV96d09F67j7XjMaXLksfeQYvvAR7D-QCb1ajQZtROLibisiZR_mQzIg_HAKBKI40e6P-O7DO6W8T38vDPIOnMBOJy_KKM-lxXoUAgL5GTTWsFhPujyGcYDtjk3u-JTqMZK_EhtxAwazDEinwe_G93IZM0NJ7sDox3gxDd60Qo7b7eAoFabsctETMWLK1zV05s5-5bnCW261Z-m3jn401sEuymxJ4zd5DBEf1TciPGpxsA2Xg0lyVskrQI-a2Y0-q3NMQ-Lso2N682KTdrDwAnfQZWBcRPC&remote_template=1',
-        //   }
-        //),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
+    title: 'TuneTube',
+    theme: tuneTubeTheme(),
+    home: const HomePage(),
+  );
 }

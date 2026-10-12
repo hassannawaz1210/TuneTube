@@ -42,6 +42,7 @@
 /dev/integration_tests/**/xcuserdata
 /dev/integration_tests/**/Pods
 /packages/flutter/coverage/
+dist/
 version
 analysis_benchmark.json
 
@@ -124,11 +125,13 @@ unlinked_spec.ds
 
 # Coverage
 coverage/
+dist/
 
 # Symbols
 app.*.symbols
 
 # Exceptions to above rules.
+!pubspec.lock
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3
 !**/ios/**/default.pbxuser
